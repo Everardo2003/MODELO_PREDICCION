@@ -11,9 +11,9 @@ function Login() {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center">
-      <div className="border-none p-10 rounded-2xl shadow-xl flex flex-col items-center max-w-sm w-full bg-white/10 backdrop-blur-md">
-        <h1 className="text-2xl font-semibold mb-6">Bienvenido</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center">
+      <div className="border-none p-10 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full bg-white/20 backdrop-blur-lg">
+        <h1 className="text-3xl font-bold mb-6 text-white">Bienvenido</h1>
         <button
           type="button"
           onClick={handleStart}
