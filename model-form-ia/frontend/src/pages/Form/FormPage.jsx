@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import BinaryLabel from '../../components/BinaryLabel'
 import { useNavigate } from 'react-router-dom';
 
 const pages = [
@@ -107,6 +106,49 @@ const pages = [
   }
 ]
 
+// --- Componente para cada campo con radios ---
+function BinaryLabel({ label, name, value, onChange, error }) {
+  return (
+    <div className="mb-4">
+      <span className="font-semibold">{label}</span>
+      <div className="mt-2 flex gap-4">
+        <label
+          className={`px-4 py-2 rounded cursor-pointer transition ${
+            value === true ? 'bg-green-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          <input
+            type="radio"
+            name={name}
+            value="true"
+            checked={value === true}
+            onChange={() => onChange(name, true)}
+            className="hidden"
+          />
+          Sí
+        </label>
+        <label
+          className={`px-4 py-2 rounded cursor-pointer transition ${
+            value === false ? 'bg-red-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          <input
+            type="radio"
+            name={name}
+            value="false"
+            checked={value === false}
+            onChange={() => onChange(name, false)}
+            className="hidden"
+          />
+          No
+        </label>
+      </div>
+      {error && <p className="text-red-500 text-sm mt-1">Este campo es obligatorio</p>}
+    </div>
+  );
+}
+
+// --- Página principal del formulario ---
 function FormPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [error, setError] = useState('');
@@ -120,32 +162,21 @@ function FormPage() {
     }, {})
   );
 
-  const handleNext = () => {
-    // Buscar el primer campo vacío en la página actual
-    const emptyField = currentPage.fields.find(f => values[f.name] === null);
+  const currentPage = pages[pageIndex];
 
+  const handleNext = () => {
+    const emptyField = currentPage.fields.find(f => values[f.name] === null);
     if (emptyField) {
       setError('Debes seleccionar una opción para cada síntoma.');
-
-      // marcar el campo vacío en rojo
       setMissingFields(prev => ({ ...prev, [emptyField.name]: true }));
-
-      // enfocar el campo vacío
       const element = document.getElementsByName(emptyField.name)[0];
       if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
       return;
     }
-
-    // limpiar errores si todo está bien
     setMissingFields({});
     setError('');
-
-    if (pageIndex < pages.length - 1) {
-      setPageIndex(pageIndex + 1);
-    }
+    if (pageIndex < pages.length - 1) setPageIndex(pageIndex + 1);
   };
-
 
   const handlePrev = () => {
     if (pageIndex > 0) setPageIndex(pageIndex - 1);
@@ -153,132 +184,109 @@ function FormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validación de campos vacíos
     const globalMissing = pages.some(page =>
       page.fields.some(f => values[f.name] === null)
     );
-
     if (globalMissing) {
       setError("Asegúrate de responder todas las secciones antes de enviar.");
-
       const newMissing = {};
       pages.forEach(page => {
         page.fields.forEach(f => {
-          if (values[f.name] === null) {
-            newMissing[f.name] = true;
-          }
+          if (values[f.name] === null) newMissing[f.name] = true;
         });
       });
       setMissingFields(newMissing);
-
       const firstEmpty = pages.flatMap(p => p.fields).find(f => values[f.name] === null);
       if (firstEmpty) {
         const element = document.getElementsByName(firstEmpty.name)[0];
         if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-
       return;
     }
 
-    // Si todo está respondido, juntar los 67 valores
     const resultList = pages.flatMap(page =>
       page.fields.map(f => values[f.name])
     );
 
     try {
-      // Enviar al backend para obtener la predicción
       const response = await fetch("https://modelo-prediccion-byot.onrender.com/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ features: resultList }),
       });
-
       if (!response.ok) throw new Error("Error en la petición");
-
       const data = await response.json();
-      const resultDisease = String(data.prediction[0]); //convertir a string
+      const resultDisease = String(data.prediction[0]);
 
-      // 2️⃣ Guardar en Sheets a través del backend
       await fetch("https://modelo-prediccion-byot.onrender.com/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ features: resultList, result: resultDisease }),
       });
 
-      // 3️⃣ Navegar a resultados
       localStorage.setItem("canAccessForm", "true");
       navigate("/result", { state: { prediction: resultDisease } });
-
     } catch (error) {
       console.error("Error al enviar datos:", error);
       alert("Hubo un error al enviar los datos");
     }
   };
 
+  const handleChange = (name, value) => {
+    setValues(prev => ({ ...prev, [name]: value }));
+    setError('');
+  };
 
-
-    const handleChange = (name, value) => {
-      setValues(prev => ({ ...prev, [name]: value }));
-      setError('');
-    }
-
-    const currentPage = pages[pageIndex];
-
-    return (
-      <>
-        <div className='flex items-center justify-center'>
-          <div className='w-4/5'>
-            <div className='bg-white/10 backdrop-blur-md rounded-2xl shadow-xl p-8 my-10'>
-              <form >
-                <h2 className='text-2xl mb-10 border-b-2 mt-10'>{currentPage.tittle}</h2>
-                {currentPage.fields.map((field, idx) => (
-                  <BinaryLabel
-                    key={idx}
-                    label={field.label}
-                    name={field.name}
-                    value={values[field.name]}
-                    onChange={handleChange}
-                    error={missingFields[field.name]}
-                  />
-                ))}
-
-                {error && <p className='text-red-500 mt-2'>{error}</p>}
-
-                <div className='flex justify-between mt-6'>
-                  {pageIndex > 0 && (
-                    <button
-                      type='button'
-                      onClick={handlePrev}
-                      className='my-5 px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600'
-                    >
-                      Anterior
-                    </button>
-                  )}
-                  {pageIndex < pages.length - 1 ? (
-                    <button
-                      type='button'
-                      onClick={handleNext}
-                      className='hover:cursor-pointer my-5 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ml-auto'
-                    >
-                      Siguiente
-                    </button>
-                  ) : (
-                    <button
-                      type='button'
-                      onClick={handleSubmit}
-                      className='my-5 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
-                    >
-                      Enviar
-                    </button>
-                  )}
-                </div>
-              </form>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center">
+      <div className="w-4/5">
+        <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl p-8 my-10">
+          <form>
+            <h2 className="text-2xl mb-10 border-b-2 mt-10 text-white">{currentPage.tittle}</h2>
+            {currentPage.fields.map((field, idx) => (
+              <BinaryLabel
+                key={idx}
+                label={field.label}
+                name={field.name}
+                value={values[field.name]}
+                onChange={handleChange}
+                error={missingFields[field.name]}
+              />
+            ))}
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+            <div className="flex justify-between mt-6">
+              {pageIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="my-5 px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                  Anterior
+                </button>
+              )}
+              {pageIndex < pages.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="my-5 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ml-auto"
+                >
+                  Siguiente
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="my-5 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 ml-auto"
+                >
+                  Enviar
+                </button>
+              )}
             </div>
-          </div>
+          </form>
         </div>
-      </>
-    )
-  }
+      </div>
+    </div>
+  );
+}
 
-  export default FormPage
+export default FormPage;
