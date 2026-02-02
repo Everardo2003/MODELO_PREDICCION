@@ -34,6 +34,10 @@ def predict(data: InputData):
     prediction = model.predict(x)
     return {"prediction": prediction.tolist()}
 
+@app.get("/")
+def root():
+    return {"message": "Backend de predicción activo"}
+
 # --- 5️⃣ Endpoint para guardar en Google Sheets ---
 @app.post("/save")
 def save(data: SaveData):
