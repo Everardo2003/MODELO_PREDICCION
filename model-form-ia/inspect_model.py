@@ -9,8 +9,8 @@ if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"No se encontró el archivo {MODEL_PATH}")
 
 model = load_model(MODEL_PATH)
-print("\n✅ Modelo cargado correctamente.\n")
+print("\nModelo cargado correctamente.\n")
 
 # --- 3️⃣ Mostrar resumen del modelo ---
-print("📋 Resumen de la arquitectura del modelo:")
+print("Resumen de la arquitectura del modelo:")
 model.summary()
