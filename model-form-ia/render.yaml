@@ -1,0 +1,21 @@
+services:
+  # --- BACKEND (Python / Flask o FastAPI) ---
+  - type: web
+    name: backend
+    env: python
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
+    envVars:
+      - key: PORT
+        value: 10000
+    plan: free
+
+  # --- FRONTEND (React) ---
+  - type: web
+    name: frontend
+    env: node
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: build
+    plan: free
