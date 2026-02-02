@@ -188,7 +188,7 @@ function FormPage() {
 
     try {
       // Enviar al backend para obtener la predicción
-      const response = await fetch("http://127.0.0.1:8000/predict", {
+      const response = await fetch("https://modelo-prediccion-byot.onrender.com/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ features: resultList }),
@@ -200,7 +200,7 @@ function FormPage() {
       const resultDisease = String(data.prediction[0]); //convertir a string
 
       // 2️⃣ Guardar en Sheets a través del backend
-      await fetch("http://127.0.0.1:8000/save", {
+      await fetch("https://modelo-prediccion-byot.onrender.com/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ features: resultList, result: resultDisease }),
