@@ -216,16 +216,17 @@ function FormPage() {
       });
       if (!response.ok) throw new Error("Error en la petición");
       const data = await response.json();
-      const resultDisease = String(data.prediction[0]);
+      const predictionArray = data.prediction[0]; // array de floats
 
       await fetch("https://modelo-prediccion-byot.onrender.com/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ features: resultList, result: resultDisease }),
+        body: JSON.stringify({ features: resultList, result: String(predictionArray) }),
       });
 
       localStorage.setItem("canAccessForm", "true");
-      navigate("/result", { state: { prediction: resultDisease } });
+      navigate("/result", { state: { prediction: predictionArray } });
+
     } catch (error) {
       console.error("Error al enviar datos:", error);
       alert("Hubo un error al enviar los datos");
